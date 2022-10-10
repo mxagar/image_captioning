@@ -5,3 +5,4 @@ literature/*.pdf
 __pycache__
 Instructions.md
 4_Zip Your Project Files and Submit.ipynb
+workspace_utils.py
