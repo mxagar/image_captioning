@@ -2,7 +2,8 @@
 
 This repository contains an image captioning project which uses deep learning models. Given an image, first, it is processed by a CNN, and second, by a RNN. The model outputs a text caption of the content. The [MS COCO](https://cocodataset.org/#home) dataset was used for training.
 
-The project uses materials from the [Udacity Computer Vision Nanodegree](https://www.udacity.com/course/computer-vision-nanodegree--nd891).
+The implementation is based on the paper *Show, Attend and Tell* by [Xu et al.](https://arxiv.org/abs/1502.03044) and the project uses materials from the [Udacity Computer Vision Nanodegree](https://www.udacity.com/course/computer-vision-nanodegree--nd891).
+
 
 ## Introduction
 
