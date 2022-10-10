@@ -3,3 +3,4 @@
 literature/*.pdf
 .ipynb_checkpoints
 __pycache__
+Instructions.md
