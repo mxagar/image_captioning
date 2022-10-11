@@ -7,3 +7,4 @@ Instructions.md
 4_Zip Your Project Files and Submit.ipynb
 workspace_utils.py
 *.pkl
+models/*
