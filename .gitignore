@@ -8,3 +8,4 @@ Instructions.md
 workspace_utils.py
 *.pkl
 models/*
+training_log.txt
