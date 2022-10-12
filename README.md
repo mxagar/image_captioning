@@ -59,8 +59,22 @@ In the following sections I explain in more detail all those steps.
 The project folder contains the following files:
 
 ```
-
+.
+├── 0_Dataset.ipynb
+├── 1_Preliminaries.ipynb
+├── 2_Training.ipynb
+├── 3_Inference.ipynb
+├── README.md
+├── data_loader.py
+├── images/
+├── literature/
+├── model.py
+├── models/
+├── requirements.txt
+└── vocabulary.py
 ```
+
+:construction:
 
 The implementation is guided by the notebooks, which either contain the necessary code or import it from different scripts (explained below).
 
@@ -73,12 +87,15 @@ As mentioned, first, the [dependencies](#dependencies) and the [COCO dataset](#c
   - The model definition is tested (size of the output); the model itself is implemented in [`model.py`](model.py).
 - [`2_Training.ipynb`](2_Training.ipynb)
   - Hyperparameters are defined following [Vinyals et al.](https://arxiv.org/abs/1411.4555).
-  - The model(s) are trained and the weights persisted.
+  - The models (i.e., the encoder and the decoder) are trained and the weights persisted.
 - [`3_Inference.ipynb`](3_Inference.ipynb)
+  - The trained models are loaded.
+  - Random images are fed first to the encoder, which produces a vector for each image.
+  - Vector images are passed to the decoder, which generates a sequence of tokens that describes each image.
 
-On the other hand, 
+On the other hand, the implementation scripts and their contents are the following:
 
-- `data_loader.py`: data loader class based on the Pytorch [`DataLoader`](https://pytorch.org/docs/master/data.html#torch.utils.data.DataLoader) and the COCO API.
+- [`data_loader.py`](data_loader.py): data loader class based on the Pytorch [`DataLoader`](https://pytorch.org/docs/master/data.html#torch.utils.data.DataLoader) and the COCO API.
   - A dataset is built using the COCO API.
   - Images are loaded and returned as tensors.
   - Captions are processed to build a vocabulary (see next file); then, captions are returned as tensors of indices.
@@ -86,7 +103,7 @@ On the other hand,
   - We get the data loader via `get_loader()` and we can pass a `transform` to it
   - Once we've found a correct `vocab_threshold` (see below), we should use the option `vocab_from_file=True`, because the persisted vocabulary is loaded.
   - Note: the index we insert to the COCO dataset is not the image index, but the annotation index; then, the image id of that annotation is found, and with it the image. Thus, we end up having the same image every 5 captions. However, not that the caption ids of the same image don't need not be consecutive!
-- `vocabulary.py`: vocabulary class based on NLTK.
+- [`vocabulary.py`](vocabulary.py): vocabulary class based on NLTK.
   - All captions are read and tokenized with NLTK.
   - A vocabulary word is created (with associated index) if the word appears more than `vocab_threshold` times.
   - The vocabulary is stored in a dictionary: `word2idx`.
@@ -95,10 +112,10 @@ On the other hand,
   - Building the vocabulary takes some minutes.
   - The built vocabulary is persisted as a pickle.
   - Once we've found a correct `vocab_threshold`, we should use the option `vocab_from_file=True`, because the persisted vocabulary is loaded.
-- `model.py`: definition of the `EncoderCNN` and the `DecoderRNN`
+- [`model.py`](model.py): definition of the `EncoderCNN` and the `DecoderRNN`.
   - `EncoderCNN`: frozen ResNet50 from which its classifier is replace by a new fully connected layer that maps feature vectors into vectors of the size of the word embedding.
   - `DecoderRNN`: architecture based in the one from [Vinyals et al.](https://arxiv.org/abs/1411.4555). It consists in an LSTM layer which takes the caption sequence with the transformed image at the front. The output is a sequence of hidden states of the same length; the hidden states are mapped to the vocabulary space so that each sequence element predicts the likelihood of any word in the vocabulary.
-
+  - The decoder has an inference function called `sample()`; 
 
 
 ### Dependencies
@@ -170,14 +187,15 @@ The images and annotations need to be extracted to the `cocoapi` repository fold
 
 ## The Encoder-Decoder Model
 
-:construction: TBD
+If feel you're a bit lost, you can have a look at my [text generator project](https://mikelsagardia.io/blog/text-generation-rnn.html) or [sentiment analysis method collection](https://github.com/mxagar/text_sentiment); in them, I explain the most basic concepts upon which the current image captioning project is built.
 
-[text_sentiment](https://github.com/mxagar/text_sentiment)
+The model from this project consists of two networks: the encoder and the decoder. I have implemented them as described in the great paper [Show and Tell](https://arxiv.org/abs/1411.4555) by Vinyals et al. Even though the networks are defined separately, their weights are trained together in the optimizer.
 
+:construction:
 
 ## Practical Notes
 
-- Two different models are defined but optimized together since their selected parameters are passed to the optimizer.
+:construction:
 
 ## Improvements, Next Steps
 
