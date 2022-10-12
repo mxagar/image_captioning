@@ -9,3 +9,7 @@ workspace_utils.py
 *.pkl
 models/*
 training_log.txt
+2_Training.html
+3_Inference.html
+filelist.html
+project2.zip
