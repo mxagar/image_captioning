@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
-
+import torch.nn.functional as F
+import numpy as np
 
 class EncoderCNN(nn.Module):
     def __init__(self, embed_size):
@@ -51,7 +52,7 @@ class DecoderRNN(nn.Module):
         self.fc = nn.Linear(self.hidden_size, self.vocab_size)
         
         # Softmax
-        self.softmax = nn.Softmax(dim=2)
+        self.softmax = nn.Softmax(dim=1)
         
     def forward(self, features, captions):
         
@@ -104,12 +105,67 @@ class DecoderRNN(nn.Module):
         out = out.view(lstm_out.size(0), lstm_out.size(1), -1)
         
         # Log-Softmax / SoftMax: dim=2
-        out = self.softmax(out) # a probability for each token in the vocabulary
+        #out = self.softmax(out) # a probability for each token in the vocabulary
         
         # Return the final output
         # We don't return the hidden state because we won't re-use it!
         return out
-
+    
     def sample(self, inputs, states=None, max_len=20):
-        " accepts pre-processed image tensor (inputs) and returns predicted sentence (list of tensor ids of length max_len) "
-        pass
+        """Accepts pre-processed image tensor (inputs)
+        and returns predicted sentence,
+        i.e., list of tensor ids of length max_len)
+        
+        Arguments:
+            inputs (tensor): pre-processed image tensor
+            states (tensor): hidden state to initialize
+            max_len (int): maximum length of the returned caption integers
+            
+        Returns:
+            outputs (list): list of caption integers; length: max_len
+        """
+        
+        # Initialize output as a list of <end> tokens 
+        outputs = [1]*max_len
+        
+        # Initial hidden state is 0
+        hidden = None
+        
+        # Pass the image and obtain the token sequence
+        # This is similar to the forward pass
+        with torch.no_grad():
+            for i in range(max_len):
+                # lstm_out size: (batch_size=1, sequence_length=1, hidden_size)
+                lstm_out, hidden = self.lstm(inputs, hidden)
+                # out size: (1, hidden_size) 
+                out = lstm_out.reshape(lstm_out.size(0)*lstm_out.size(1), lstm_out.size(2))
+                # fc_out size (1, vocabulary_size)
+                fc_out = self.fc(out)
+                
+                # Get probabilities
+                p = F.softmax(fc_out, dim=1).data
+
+                # Move to cpu
+                p = p.cpu() 
+                # Use top_k sampling to get the index of the next word
+                top_k = 5
+                p, top_indices = p.topk(top_k)
+                #print(top_indices)
+                top_indices = top_indices.numpy().squeeze()
+                # Select the likely next word index with some element of randomness
+                p = p.numpy().squeeze()
+                token_id = int(np.random.choice(top_indices, p=p/p.sum()))
+                
+                # Save to output sequence
+                outputs[i] = token_id
+                
+                # Create next input from output token
+                # inputs size: (1, 1, embedding_size=512)
+                input_token = torch.Tensor([[token_id]]).long()
+                inputs = self.embedding(input_token)
+
+                if token_id == 1:
+                    # <end>
+                    break
+        
+        return outputs
