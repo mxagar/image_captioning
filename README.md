@@ -36,8 +36,10 @@ First, you need to install the [dependencies](#dependencies) and set up the [COC
   - The `cocoapi` for the [COCO dataset](#coco-dataset) is tested; the dataset is loaded and it is shown how to get images and captions with the API.
 - `1_Preliminaries.ipynb`
   - The `DataLoader` class which is built using `data_loader.py` and `vocabulary.py` is explained; also the code in those auxiliary scripts is explained with examples.
-  - 
+  - The model definition is tested (size of the output).
 - `2_Training.ipynb`
+  - Hyperparameters are defined following [Vinyals et al.](https://arxiv.org/abs/1411.4555).
+  - The model is trained.
 - `3_Inference.ipynb`
 
 - `data_loader.py`: data loader class based on the Pytorch [DataLoader](https://pytorch.org/docs/master/data.html#torch.utils.data.DataLoader) and the COCO API.
@@ -62,7 +64,7 @@ First, you need to install the [dependencies](#dependencies) and set up the [COC
   - `EncoderCNN`: frozen ResNet50 from which its classifier is replace by a new fully connected layer that maps feature vectors into vectors of the size of the word embedding.
   - `DecoderRNN`: architecture based in the one from [Vinyals et al.](https://arxiv.org/abs/1411.4555). It consists in an LSTM layer which takes the caption sequence with the transformed image at the front. The output is a sequence of hidden states of the same length; the hidden states are mapped to the vocabulary space so that each sequence element predicts the likelihood of any word in the vocabulary.
 
-The choice of the hyperparameters was strongly influenced by [Vinyals et al.](https://arxiv.org/abs/1411.4555).
+
 
 ### Dependencies
 
@@ -137,13 +139,16 @@ The images and annotations need to be extracted to the `cocoapi` repository fold
 
 [text_sentiment](https://github.com/mxagar/text_sentiment)
 
+- Two different models are defined but optimized together since their selected parameters are passed to the optimizer.
+
 ## Improvements, Next Steps
 
 :construction: TBD
 
 - Encoder: try other frozen/pre-trained backbones (e.g., [Inception-V3](https://pytorch.org/hub/pytorch_vision_inception_v3/)) as feature extractors.
 - Encoder: add batch normalization after the feature extractor.
-- Implement attention, for instance after [Show, Attend and Tell, by Xue et al.](https://arxiv.org/abs/1502.03044).
+- Implement attention, for instance after [Show, Attend and Tell, by Xue et al.](https://arxiv.org/abs/1502.03044)
+- Implement *beam search* to sample the tokens of predicted sentence, as in [Show and Tell, by Vinyals et al.](https://arxiv.org/abs/1411.4555)
 
 ## Interesting Links
 
