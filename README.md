@@ -46,6 +46,8 @@ This document is structured as follows:
   - [The Encoder-Decoder Model](#the-encoder-decoder-model)
   - [Practical Notes](#practical-notes)
   - [Improvements, Next Steps](#improvements-next-steps)
+    - [Notes on How to Perform Validation](#notes-on-how-to-perform-validation)
+    - [Notes on Beam Search](#notes-on-beam-search)
   - [Interesting Links](#interesting-links)
   - [Authorship](#authorship)
 
@@ -199,22 +201,76 @@ The model from this project consists of two networks: the encoder and the decode
 
 ## Improvements, Next Steps
 
-- [ ] Encoder: try other frozen/pre-trained backbones (e.g., [Inception-V3](https://pytorch.org/hub/pytorch_vision_inception_v3/)) as feature extractors.
+- [ ] Encoder: try other frozen/pre-trained backbones (e.g., [Inception-V3](https://pytorch.org/hub/pytorch_vision_inception_v3/)) as feature extractors. See related [blog post Google AI](https://ai.googleblog.com/2016/09/show-and-tell-image-captioning-open.html).
 - [ ] Encoder: add batch normalization after the feature extractor.
+- [ ] Perform **validation**. See below the section on [validation](#notes-on-how-to-perform-validation).
+- [ ] Implement **beam search** to sample the tokens of predicted sentence, as in [Show and Tell, by Vinyals et al.](https://arxiv.org/abs/1411.4555). See the section on [beam search](#notes-on-beam-search) below.
+- [ ] Explore the limits of the application to see where breakpoint is:
+  - [ ] Try smaller networks: ResNet18, MobileNet, ShuffleNet, EfficientNet, DenseNet
+  - [ ] Try smaller capacities: `embed_size` or `hidden_size` of values `64-128`
+  - [ ] Which is the importance of `vocab_threshold`?
+- [ ] Evaluate the model with [BLEU](https://aclanthology.org/P02-1040.pdf)
+- [ ] Try a more extensive data augmentation, e.g., `RandomVerticalFlip`; it has been shown that data augmentation improves considerably the model performance in image caption generation applications: [Aldabbas et al.](https://www.semanticscholar.org/paper/Data-Augmentation-to-Stabilize-Image-Caption-Models-Aldabbas-Asad/12956b76523678080c5b9f35ffc6fbb456550737)
+- [ ] Try other optimizers. Adam is good to avoid local optima and it adjusts the learning rate automatically; however, training only for 3 epochs probably is not enough to see the advantages. See the paper links below.
 - [ ] Implement attention, for instance after [Show, Attend and Tell, by Xue et al.](https://arxiv.org/abs/1502.03044)
-- [ ] Implement *beam search* to sample the tokens of predicted sentence, as in [Show and Tell, by Vinyals et al.](https://arxiv.org/abs/1411.4555)
+
+
+### Notes on How to Perform Validation
+
+Quick recipe to implement validation: 
+
+1. Implement in the `get_loader()` function from `data_loadder.py` the following condition:
+
+```python
+    if mode == 'val':
+        if vocab_from_file==True: 
+            assert os.path.exists(vocab_file), "vocab_file does not exist. Set vocab_from_file=False"
+        img_folder = os.path.join(cocoapi_loc, 'cocoapi/images/val2014/')
+        annotations_file = os.path.join(cocoapi_loc, 'cocoapi/annotations/captions_val2014.json')
+```
+
+2. Use [`pycocoevalcap`](https://github.com/salaniz/pycocoevalcap) to compute the metrics, e.g., BLEU. Usage example: [coco_eval_example.py](https://github.com/salaniz/pycocoevalcap/blob/master/example/coco_eval_example.py).
+
+### Notes on Beam Search
+
+Given a `beam_width`, every time step, the algorithm selects `beam_width` of best alternatives with the highest probability as the most likely possible choices. Example with `beam_width = 3`:
+
+- 1. Find the top 3 words with the highest probability given the input sentence.
+- 2. Find the three best pairs for the first and second words based on the conditional probability.
+- 3. Find the three best pairs for the first, second and third word based on the input sentence and the chosen first and the second word.
+
+Check these links:
+
+- [Foundations of NLP Explained Visually: Beam Search, How It Works](https://towardsdatascience.com/foundations-of-nlp-explained-visually-beam-search-how-it-works-1586b9849a24)
+- Example implementation: [beam.py](https://github.com/mbarnes1/beam_search/blob/master/beam.py)
 
 ## Interesting Links
 
 - [My notes and code](https://github.com/mxagar/computer_vision_udacity) on the [Udacity Computer Vision Nanodegree](https://www.udacity.com/course/computer-vision-nanodegree--nd891).
 - [My notes and code](https://github.com/mxagar/deep_learning_udacity) on the [Udacity Deep Learning Nanodegree](https://www.udacity.com/course/deep-learning-nanodegree--nd101).
 - [Pytorch: Writing Custom Datasets, DataLoaders and Transforms](https://pytorch.org/tutorials/beginner/data_loading_tutorial.html)
-- [A Tutorial on Image Captioning](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning)
+- [A Tutorial on Image Captioning / Implementation of Show, Attend and Tell](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning)
+- [Implementation of Show, Attend and Tell](https://github.com/minfengUCAS/show-attend-tell)
+- [Report on the Implementation of Show and Tell](https://cs224d.stanford.edu/reports/msoh.pdf)
+- [Foundations of NLP Explained Visually: Beam Search, How It Works](https://towardsdatascience.com/foundations-of-nlp-explained-visually-beam-search-how-it-works-1586b9849a24)
+- Tools for NLP evaluation metrics applied to the COCO dataset: [`pycocoevalcap`](https://github.com/salaniz/pycocoevalcap)
 
 **Papers**: look in the folder [literature](literature/literature.txt):
 
 - [Vinyals et al.: Show and Tell: A Neural Image Caption Generator](https://arxiv.org/abs/1411.4555)
 - [Xu et al.: Show, Attend and Tell: Neural Image Caption Generation with Visual Attention](https://arxiv.org/abs/1502.03044)
+- [VQA: Visual Question Answering, Agrawal et al.](https://arxiv.org/abs/1505.00468v7)
+- [Rich Image Captioning in the Wild, Tran et al.](https://arxiv.org/abs/1603.09016)
+- [Image Captioning and Visual Question Answering Based on Attributes and External Knowledge, Wu et al.](https://arxiv.org/abs/1603.02814)
+- [Intention Oriented Image Captions with Guiding Objects, Zheng et al.](https://arxiv.org/abs/1811.07662)
+- [Object Counts! Bringing Explicit Detections Back into Image Captioning, Wang et al.](https://arxiv.org/abs/1805.00314)
+- [A Multi-task Learning Approach for Image Captioning, Zhao et al.](https://www.ijcai.org/Proceedings/2018/168)
+- [Counterfactual Visual Explanations, Goyal et al.](https://arxiv.org/abs/1904.07451)
+- [BLEU: a Method for Automatic Evaluation of Machine Translation, Papineni et al.](https://aclanthology.org/P02-1040.pdf)
+- [Data Augmentation to Stabilize Image Caption Generation Models in Deep Learning, Aldabbas et al.](https://www.semanticscholar.org/paper/Data-Augmentation-to-Stabilize-Image-Caption-Models-Aldabbas-Asad/12956b76523678080c5b9f35ffc6fbb456550737)
+- [Descending through a Crowded Valley - Benchmarking Deep Learning Optimizers, Schmidt et al.](https://arxiv.org/abs/2007.01547)
+- [An overview of gradient descent optimization algorithms, Ruder](https://arxiv.org/pdf/1609.04747.pdf)
+- 
 
 ## Authorship
 

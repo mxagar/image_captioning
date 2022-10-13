@@ -13,3 +13,92 @@ Vinyals_ImageCaptioning_2015.pdf
     Oriol Vinyals, Alexander Toshev, Samy Bengio, Dumitru Erhan
     Show and Tell: A Neural Image Caption Generator
     2015
+
+Papineni_BLEU_2002.pdf
+
+	https://aclanthology.org/P02-1040.pdf
+
+    Kishore Papineni, Salim Roukos, Todd Ward, and Wei-Jing Zhu
+    BLEU: a Method for Automatic Evaluation of Machine Translation
+    2002
+
+Aldabbas_DataAugmentationCaptions_2019.pdf
+
+    https://pdfs.semanticscholar.org/1295/6b76523678080c5b9f35ffc6fbb456550737.pdf?_ga=2.123705227.1614713707.1665649484-283579124.1665649484
+
+    Data Augmentation to Stabilize Image Caption Generation Models in Deep Learning
+    Hamza Aldabbas, Muhammad Asad, Mohammad Hashem Ryalat, Kaleem Razzaq Malik, Muhammad Zubair Akbar Qureshi
+    2019
+
+Zhao_MultitaskCaptioning_2018.pdf
+
+    https://www.ijcai.org/proceedings/2018/0168.pdf
+
+    A Multi-task Learning Approach for Image Captioning
+    Wei Zhao, Benyou Wang, Jianbo Ye, Min Yang, Zhou Zhao, Ruotian Luo, Yu Qiao
+    2018
+
+Agrawal_VisualQuestionAnswering_2016.pdf
+
+    https://arxiv.org/pdf/1505.00468v7.pdf
+
+    VQA: Visual Question Answering
+    Aishwarya Agrawal, Jiasen Lu, Stanislaw Antol, Margaret Mitchell, C. Lawrence Zitnick, Dhruv Batra, Devi Parikh
+    2016
+
+Wu_ImageVisualQuestionAnswering_2016.pdf
+
+    https://arxiv.org/pdf/1603.02814.pdf
+
+    Image Captioning and Visual Question Answering Based on Attributes and External Knowledge
+    Qi Wu, Chunhua Shen, Peng Wang, Anthony Dick, Anton van den Hengel
+    2016
+
+Tran_ImageCaptioning_2016.pdf
+
+    https://arxiv.org/pdf/1603.09016.pdf
+
+    Rich Image Captioning in the Wild
+    Kenneth Tran, Xiaodong He, Lei Zhang, Jian Sun, Cornelia Carapcea, Chris Thrasher, Chris Buehler, Chris Sienkiewicz
+    2016
+
+Ruder_OptimizationAlgorithms_2017.pdf
+
+    https://arxiv.org/pdf/1609.04747.pdf
+
+    An overview of gradient descent optimization algorithms
+    Sebastian Ruder
+    2017
+
+Wang_DetectionImageCaptioning_2018.pdf
+
+    https://arxiv.org/pdf/1805.00314.pdf
+
+    Object Counts! Bringing Explicit Detections Back into Image Captioning
+    Josiah Wang, Pranava Madhyastha and Lucia Specia
+    2018
+
+Zheng_IntentionImageCaptions_2019.pdf
+
+    https://arxiv.org/pdf/1811.07662.pdf
+
+    Intention Oriented Image Captions with Guiding Objects
+    Yue Zheng, Yali Li and Shengjin Wang
+    2019
+
+Goyal_VisualExplanations_2019.pdf
+
+    https://arxiv.org/pdf/1904.07451.pdf
+
+    Counterfactual Visual Explanations
+    Yash Goyal, Ziyan Wu, Jan Ernst, Dhruv Batra, Devi Parikh, Stefan Lee
+    2019
+
+Schmidt_BenchmarkingOptimizers_2021.pdf
+
+    https://arxiv.org/pdf/2007.01547.pdf
+
+    Descending through a Crowded Valley — Benchmarking Deep Learning Optimizers
+    Robin M. Schmidt, Frank Schneider, Philipp Hennig
+    2021
+
