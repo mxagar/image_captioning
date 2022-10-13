@@ -34,6 +34,9 @@ All in all, I think the repository is a good starting point to test other ideas,
 - Basic text processing (i.e., tokenization and vectorization) to create vocabularies.
 - Usage of pre-trained Convolutional Neuronal Networks.
 - Usage of Recurrent Neural Networks to learn sequences of vectors.
+- In the links, I provide resources for:
+    - How to compute the [BLEU metric](https://en.wikipedia.org/wiki/BLEU): theory and tools.
+    - How to implement [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 This document is structured as follows:
 
@@ -197,7 +200,30 @@ The model from this project consists of two networks: the encoder and the decode
 
 ## Practical Notes
 
-:construction:
+Working with sequences and RNNs can seem non-straighforward. In this section I collect some remarks that can be helpful. They are useful only if the reader knows already how LSTMs are used in general; if that's not the case [my blog post on text generation](https://mikelsagardia.io/blog/text-generation-rnn.html) provides many introductory explanations.
+
+- LSTM units are defined with `nn.LSTM` in Pytorch, and although they are called *units*, they are more like a layer than a neuron, akin to `nn.RNN`; its equivalent would be `nn.Linear`. Additionally, `nn.LSTM` can have several stacked layers inside; if they are more than 1, we can even add dropout in their definition.
+- Note that the `batch_size` and the `sequence_length` are really **not LSTM model attributes**; that means we can dynamically change these sizes every time we perform `forward()`, in other words, we can simply pass an input vector 
+- We can pass one vector after the another in a loop. However, it's more efficient to pass a sequence of vectors together in a tensor. On top of a sequence, we can define batches of sequences. While sequences are usually defined by the application programmer, I'd advise to create batches automatically with the [Pytorch `DataLoader`](https://pytorch.org/docs/stable/data.html) API, as shown in the projects [text_generator](https://github.com/mxagar/text_generator) or [image_captioning](https://github.com/mxagar/image_captioning).
+- When we pass a sequence to the `LSTM` unit:
+  - the returned hidden state tuple `hidden = (h, c)` refers to the one obtained after passing the last vector in the sequence; `h` and `c` have the same size `hidden_size`, `h` is the output or short-term memory and `c` is the cell state or long-term memory
+  - we get as output a sequence of the same length; the output sequence is composed of hidden memory state vectors `h` obtained after each input sequence element. The size of a hidden state vector doesn't need to be the same as the size of an input vector. This can be seen in the project [text_generator](https://github.com/mxagar/text_generator), too; if you'd like more explanations, I encourage you to read [my blog post on that project](https://mikelsagardia.io/blog/text-generation-rnn.html).
+- In some cases we may want to pass input vectors in a loop; for instance, that's the case when the input sequence would be composed by the subsequent outputs of the previous vector inputs, like in machine translation or [image caption generation](https://github.com/mxagar/image_captioning).
+- We decide whether to pass the `hidden` tuple or not depending on the application:
+  - If we don't pass `hidden`, the hidden states are initializes to zero according to the [Pytorch LSTM documentation](https://pytorch.org/docs/stable/generated/torch.nn.LSTM.html).
+  - I understand that if we define `hidden = None` and then do `output, hidden = lstm(inputs, hidden)`, that's like passing nothing.
+  - If we write an `init_hidden()` function to manually reset/initialize the hidden state tuple, we need to take into account that it requires the parameters `batch_size` and `sequence_length`, which should be able to modify any time.
+  - When we input a sequence, the `h` vector is passed between element processings automatically, independently from the fact whether we pass the `hidden` tuple or not.
+  - If we want to re-use the previous `hidden` tuple, you need to consider the following:
+    - The sequence inputs that reuse `hidden` *need* to be related in each loop step.
+    - In the training loop, we might want to create a new copy `hidden` to prevent backpropagating the entire training history: `hidden = tuple([each.data for each in hidden])`
+    - Important links on resetting hidden states:
+      - [In LSTM, why should I reset hidden variables?](https://discuss.pytorch.org/t/in-lstm-why-should-i-reset-hidden-variables/94016)
+      - [Shall I pass hidden states to LSTM or not?](https://discuss.pytorch.org/t/shall-i-pass-hidden-states-to-lstm-or-not/72426)
+- Observation I've done from several NLP projects: when the LSTM output is mapped to a vocabulary vector (in theory a sparse one-hot encoded vector) with a linear layer, the model output is not activated with `softmax`; instead, it is left as a non-activated (regression) output and it is passed to the regular `CrossEntropyLoss` criterion/loss function (yes, `CrossEntropyLoss`). Then, that loss function compares integer-encoded tokens with regressed vocabulary values -- it doesn't make much sense, but there seems to be some magic implemented under the hood that makes the models learn more efficiently.
+- RNNs have many hyperparameters and it can be overwhelming to select the correct starting set.
+  - [Andrej Karpathy](http://karpathy.github.io/2015/05/21/rnn-effectiveness/) gives a great collection of hints in his project [char-rnn](https://github.com/karpathy/char-rnn); these are implemented in my [text generator project](https://github.com/mxagar/text_generator).
+  - Also, related research papers give good starting points.
 
 ## Improvements, Next Steps
 
@@ -212,7 +238,7 @@ The model from this project consists of two networks: the encoder and the decode
 - [ ] Evaluate the model with [BLEU](https://aclanthology.org/P02-1040.pdf)
 - [ ] Try a more extensive data augmentation, e.g., `RandomVerticalFlip`; it has been shown that data augmentation improves considerably the model performance in image caption generation applications: [Aldabbas et al.](https://www.semanticscholar.org/paper/Data-Augmentation-to-Stabilize-Image-Caption-Models-Aldabbas-Asad/12956b76523678080c5b9f35ffc6fbb456550737)
 - [ ] Try other optimizers. Adam is good to avoid local optima and it adjusts the learning rate automatically; however, training only for 3 epochs probably is not enough to see the advantages. See the paper links below.
-- [ ] Implement attention, for instance after [Show, Attend and Tell, by Xue et al.](https://arxiv.org/abs/1502.03044)
+- [ ] Implement attention mechanisms, for instance after [Show, Attend and Tell, by Xue et al.](https://arxiv.org/abs/1502.03044)
 
 
 ### Notes on How to Perform Validation
@@ -257,8 +283,8 @@ Check these links:
 
 **Papers**: look in the folder [literature](literature/literature.txt):
 
-- [Vinyals et al.: Show and Tell: A Neural Image Caption Generator](https://arxiv.org/abs/1411.4555)
-- [Xu et al.: Show, Attend and Tell: Neural Image Caption Generation with Visual Attention](https://arxiv.org/abs/1502.03044)
+- [Show and Tell: A Neural Image Caption Generator, Vinyals et al.](https://arxiv.org/abs/1411.4555)
+- [Show, Attend and Tell: Neural Image Caption Generation with Visual Attention, Xu et al.](https://arxiv.org/abs/1502.03044)
 - [VQA: Visual Question Answering, Agrawal et al.](https://arxiv.org/abs/1505.00468v7)
 - [Rich Image Captioning in the Wild, Tran et al.](https://arxiv.org/abs/1603.09016)
 - [Image Captioning and Visual Question Answering Based on Attributes and External Knowledge, Wu et al.](https://arxiv.org/abs/1603.02814)
@@ -270,7 +296,6 @@ Check these links:
 - [Data Augmentation to Stabilize Image Caption Generation Models in Deep Learning, Aldabbas et al.](https://www.semanticscholar.org/paper/Data-Augmentation-to-Stabilize-Image-Caption-Models-Aldabbas-Asad/12956b76523678080c5b9f35ffc6fbb456550737)
 - [Descending through a Crowded Valley - Benchmarking Deep Learning Optimizers, Schmidt et al.](https://arxiv.org/abs/2007.01547)
 - [An overview of gradient descent optimization algorithms, Ruder](https://arxiv.org/pdf/1609.04747.pdf)
-- 
 
 ## Authorship
 
