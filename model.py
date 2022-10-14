@@ -76,7 +76,7 @@ class DecoderRNN(nn.Module):
         # so they come to the front
         inputs = torch.cat((features, embed), dim=1) 
         # inputs size:
-        # (batch_size, sequence_length)
+        # (batch_size, sequence_length, embedding_size)
         
         # LSTM: Pass the batch of sequences: [image, token_1, token_2, ..., token_(n-1)]
         # If we don't pass any hidden state, it defaults to 0
@@ -89,7 +89,7 @@ class DecoderRNN(nn.Module):
 
         # Size of lstm_out:
         # (batch_size, sequence_length, hidden_dimension)
-        # To pass to the linear layer we need to have (-1, hidden_dimension)
+        # To pass to the linear layer we need to have (-1, hidden_dimension),
         # i.e., (batch_size*sequence_length, hidden_dimension)
         out = lstm_out.reshape(lstm_out.size(0)*lstm_out.size(1), lstm_out.size(2))
         
