@@ -65,21 +65,19 @@ The project folder contains the following files:
 
 ```
 .
-├── 0_Dataset.ipynb
-├── 1_Preliminaries.ipynb
-├── 2_Training.ipynb
-├── 3_Inference.ipynb
-├── README.md
-├── data_loader.py
-├── images/
-├── literature/
-├── model.py
-├── models/
-├── requirements.txt
-└── vocabulary.py
+├── 0_Dataset.ipynb         # Notebook to test the COCO dataset
+├── 1_Preliminaries.ipynb   # Notebook to test the data loader
+├── 2_Training.ipynb        # Notebook to train the encoder-decoder models
+├── 3_Inference.ipynb       # Notebook for caption generation
+├── README.md               # This file
+├── data_loader.py          # Definition of the data loader for COCO
+├── images/                 # Auxiliary images
+├── literature/             # Links to papers
+├── model.py                # Encoder-decoder definition
+├── models/                 # Model weights saved during training
+├── requirements.txt        # Dependencies
+└── vocabulary.py           # Tokenization vocabulary definition
 ```
-
-:construction:
 
 The implementation is guided by the notebooks, which either contain the necessary code or import it from different scripts (explained below).
 
@@ -215,7 +213,8 @@ Note that
 
 - the decoder should learn to yield the token `<start>` as the first output,
 - the LSTM cell retains its long-term memory from step to step, which contains the image representation,
-- the LSTM determines on its own when to finish the caption by yielding the token `<end>`.
+- the LSTM determines on its own when to finish the caption by yielding the token `<end>`,
+- currently, a greedy selection of the most probable tokens is done during inference, but more sophisticated approaches can be implemented, such as [beam search](#notes-on-beam-search).
 
 ## Practical Notes
 
