@@ -119,9 +119,8 @@ On the other hand, the implementation scripts and their contents are the followi
   - Once we've found a correct `vocab_threshold`, we should use the option `vocab_from_file=True`, because the persisted vocabulary is loaded.
 - [`model.py`](model.py): definition of the `EncoderCNN` and the `DecoderRNN`.
   - `EncoderCNN`: frozen ResNet50 from which its classifier is replace by a new fully connected layer that maps feature vectors into vectors of the size of the word embedding.
-  - `DecoderRNN`: architecture based in the one from [Vinyals et al.](https://arxiv.org/abs/1411.4555). It consists in an LSTM layer which takes the caption sequence with the transformed image at the front. The output is a sequence of hidden states of the same length; the hidden states are mapped to the vocabulary space so that each sequence element predicts the likelihood of any word in the vocabulary.
-  - The decoder has an inference function called `sample()`; 
-
+  - `DecoderRNN`: architecture based in the one from [Vinyals et al.](https://arxiv.org/abs/1411.4555). It consists in an [LSTM](https://en.wikipedia.org/wiki/Long_short-term_memory) layer which takes the caption sequence with the transformed image at the front. The output is a sequence of hidden states of the same length; the hidden states are mapped to the vocabulary space so that each sequence element predicts the likelihood of any word in the vocabulary.
+  - The decoder has an inference function called `sample()`; this functions takes a pre-processed image vector and passes it to the trained LSTM unit. Then, the LSTM unit returns an output which is mapped to the vocabulary space. We use a greedy approach which consists in selecting one of the most probable words in the vocabulary vector; the first token will most probably be `<start>`. Then, the LSTM output is passed in a loop again to the LSTM to obtain the next token. The loop is run to get step by step all the tokens that build the caption until the output token is `<end>` -- then we stop. This simple approach could be improved using [beam search](#notes-on-beam-search).
 
 ### Dependencies
 
@@ -196,7 +195,27 @@ If feel you're a bit lost, you can have a look at my [text generator project](ht
 
 The model from this project consists of two networks: the encoder and the decoder. I have implemented them as described in the great paper [Show and Tell](https://arxiv.org/abs/1411.4555) by Vinyals et al. Even though the networks are defined separately, their weights are trained together in the optimizer.
 
-:construction:
+One central idea in the approach is that both images and caption tokens are transformed into the same [embedding space](https://en.wikipedia.org/wiki/Embedding). Then, these image and token embedding vectors are passed to a [Long Short-Term Memory (LSTM)](https://en.wikipedia.org/wiki/Long_short-term_memory) unit to generate hidden state vectors; and finally, these hidden state vectors are mapped to the vocabulary index space.
+
+To better understand the complete workflow, let's consider the two regimes of the model separately: (*i*) **training** and (*ii*) **inference**.
+
+As shown in the figure below, during **training**, we take image-caption pairs. The *encoder* converts the image to a feature vector using a pre-trained [ResNet50](https://en.wikipedia.org/wiki/Residual_neural_network) [Convolutional Neural Network (CNN)](https://en.wikipedia.org/wiki/Convolutional_neural_network), and then, that feature vector is transformed into an [embedding space](https://en.wikipedia.org/wiki/Embedding) using a fully connected layer.
+
+![Image Captioning Model: Training](./images/Image_Captioning_Training.png)
+
+The *decoder* takes the tokenized caption converted into vocabulary indices and transforms that sequence into embedding vectors. Note that the caption will be wrapped by the spacial tokens `<start>` and `<end>`. The image embedding vector is pushed to the front of the caption sequence and the last caption token vector is popped from the tail. The resulting sequence of vectors is fed to the LSTM, which outputs another sequence of vectors -- these are the so called hidden state vectors. Those hidden state vectors are then mapped to the vocabulary index space and we obtain a new sequence of tokens. The model loss is computed with that output: we optimize both the encoder and the decoder so that the input caption and the output sequence of tokens is the same. Note that during that process all the weights are modified except the ones of the CNN feature extractor, i.e., the ResNet50.
+
+During **inference**, we have only an image; the goal is to generate a meaning caption for it. In that process, the *encoder* carries out the same task as before: the image is converted into an embedding vector, as shown in the next figure.
+
+![Image Captioning Model: Inference](./images/Image_Captioning_Inference.png)
+
+On the other hand, the *decoder* works differently: it receives only the image embedding vector and it outputs one hidden state. Then, that hidden state vector is mapped to the vocabulary space, which results in the first token of the caption. Next, that token is transformed into the embedding space and fed to the LSTM; the process repeats in a loop while we generate all the caption tokens one after the other.
+
+Note that 
+
+- the decoder should learn to yield the token `<start>` as the first output,
+- the LSTM cell retains its long-term memory from step to step, which contains the image representation,
+- the LSTM determines on its own when to finish the caption by yielding the token `<end>`.
 
 ## Practical Notes
 
@@ -206,11 +225,11 @@ Working with sequences and RNNs can seem non-straighforward. In this section I c
 - Note that the `batch_size` and the `sequence_length` are really **not LSTM model attributes**; that means we can dynamically change these sizes every time we perform `forward()`, in other words, we can simply pass an input vector 
 - We can pass one vector after the another in a loop. However, it's more efficient to pass a sequence of vectors together in a tensor. On top of a sequence, we can define batches of sequences. While sequences are usually defined by the application programmer, I'd advise to create batches automatically with the [Pytorch `DataLoader`](https://pytorch.org/docs/stable/data.html) API, as shown in the projects [text_generator](https://github.com/mxagar/text_generator) or [image_captioning](https://github.com/mxagar/image_captioning).
 - When we pass a sequence to the `LSTM` unit:
-  - the returned hidden state tuple `hidden = (h, c)` refers to the one obtained after passing the last vector in the sequence; `h` and `c` have the same size `hidden_size`, `h` is the output or short-term memory and `c` is the cell state or long-term memory
-  - we get as output a sequence of the same length; the output sequence is composed of hidden memory state vectors `h` obtained after each input sequence element. The size of a hidden state vector doesn't need to be the same as the size of an input vector. This can be seen in the project [text_generator](https://github.com/mxagar/text_generator), too; if you'd like more explanations, I encourage you to read [my blog post on that project](https://mikelsagardia.io/blog/text-generation-rnn.html).
+  - The returned hidden state tuple `hidden = (h, c)` refers to the one obtained after passing the last vector in the sequence; `h` and `c` have the same size `hidden_size`, `h` is the output or short-term memory and `c` is the cell state or long-term memory.
+  - We get as output a sequence of the same length; the output sequence is composed of hidden memory state vectors `h` obtained after each input sequence element. The size of a hidden state vector doesn't need to be the same as the size of an input vector. This can be seen in the project [text_generator](https://github.com/mxagar/text_generator), too; if you'd like more explanations, I encourage you to read [my blog post on that project](https://mikelsagardia.io/blog/text-generation-rnn.html).
 - In some cases we may want to pass input vectors in a loop; for instance, that's the case when the input sequence would be composed by the subsequent outputs of the previous vector inputs, like in machine translation or [image caption generation](https://github.com/mxagar/image_captioning).
 - We decide whether to pass the `hidden` tuple or not depending on the application:
-  - If we don't pass `hidden`, the hidden states are initializes to zero according to the [Pytorch LSTM documentation](https://pytorch.org/docs/stable/generated/torch.nn.LSTM.html).
+  - If we don't pass `hidden`, the hidden states are initialized to zero according to the [Pytorch LSTM documentation](https://pytorch.org/docs/stable/generated/torch.nn.LSTM.html).
   - I understand that if we define `hidden = None` and then do `output, hidden = lstm(inputs, hidden)`, that's like passing nothing.
   - If we write an `init_hidden()` function to manually reset/initialize the hidden state tuple, we need to take into account that it requires the parameters `batch_size` and `sequence_length`, which should be able to modify any time.
   - When we input a sequence, the `h` vector is passed between element processings automatically, independently from the fact whether we pass the `hidden` tuple or not.
@@ -232,10 +251,10 @@ Working with sequences and RNNs can seem non-straighforward. In this section I c
 - [ ] Perform **validation**. See below the section on [validation](#notes-on-how-to-perform-validation).
 - [ ] Implement **beam search** to sample the tokens of predicted sentence, as in [Show and Tell, by Vinyals et al.](https://arxiv.org/abs/1411.4555). See the section on [beam search](#notes-on-beam-search) below.
 - [ ] Explore the limits of the application to see where breakpoint is:
-  - [ ] Try smaller networks: ResNet18, MobileNet, ShuffleNet, EfficientNet, DenseNet
-  - [ ] Try smaller capacities: `embed_size` or `hidden_size` of values `64-128`
+  - [ ] Try smaller networks: ResNet18, MobileNet, ShuffleNet, EfficientNet, DenseNet.
+  - [ ] Try smaller capacities: `embed_size` or `hidden_size` of values `64-128`.
   - [ ] Which is the importance of `vocab_threshold`?
-- [ ] Evaluate the model with [BLEU](https://aclanthology.org/P02-1040.pdf)
+- [ ] Evaluate the model with [BLEU](https://aclanthology.org/P02-1040.pdf).
 - [ ] Try a more extensive data augmentation, e.g., `RandomVerticalFlip`; it has been shown that data augmentation improves considerably the model performance in image caption generation applications: [Aldabbas et al.](https://www.semanticscholar.org/paper/Data-Augmentation-to-Stabilize-Image-Caption-Models-Aldabbas-Asad/12956b76523678080c5b9f35ffc6fbb456550737)
 - [ ] Try other optimizers. Adam is good to avoid local optima and it adjusts the learning rate automatically; however, training only for 3 epochs probably is not enough to see the advantages. See the paper links below.
 - [ ] Implement attention mechanisms, for instance after [Show, Attend and Tell, by Xue et al.](https://arxiv.org/abs/1502.03044)
