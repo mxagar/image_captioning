@@ -89,7 +89,7 @@ class DecoderRNN(nn.Module):
 
         # Size of lstm_out:
         # (batch_size, sequence_length, hidden_dimension)
-        # To pass to the linear layer we need to have (-1, hidden_dimension),
+        # To pass to the linear layer we need to have (-1, hidden_dimension),1
         # i.e., (batch_size*sequence_length, hidden_dimension)
         out = lstm_out.reshape(lstm_out.size(0)*lstm_out.size(1), lstm_out.size(2))
         
